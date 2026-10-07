@@ -9,6 +9,7 @@ import re
 from casino.types import GameContext
 from casino.utils import clear_screen, cprint, cinput, display_topbar
 from casino.accounts import Account
+from casino.stats import GameStats, display_stats
 
 ROULETTE_HEADER = """
 ┌─────────────────────────────┐
@@ -416,7 +417,7 @@ class Roulette:
             }
             i += 1  # Move to next user
 
-    def payout(self) -> None:
+    def payout(self, stats) -> None:
         """
         Pay out all players who picked the right color or number.
         """
@@ -446,8 +447,10 @@ class Roulette:
             if win_multiplier > 1:
                 win_amount = bet_amount * win_multiplier
                 self.accounts[i].deposit(win_amount)
+                stats.wins +=1
                 cprint(f"Player {i+1}: Won {win_amount} coins.")
             else:
+                stats.losses += 1
                 cprint(f"Player {i+1}: Lost {bet_amount} coins.")
             
             i += 1
@@ -462,6 +465,9 @@ class AmericanRoulette(Roulette):
         super().__init__(accounts)
         self.wheel = STANDARD_AMERICAN_ROULETTE_WHEEL
         self.valid_numbers = [number for (number, _, _, _) in self.wheel]
+        # self.stats = GameStats("Roulette",self.account.balance)
+
+        # cprint("account balance: " + co.accounts.balance)
 
 
 def play_roulette(context: GameContext) -> None:
@@ -479,25 +485,34 @@ def play_roulette(context: GameContext) -> None:
         raise ValueError("accounts is not a list. "
                          f"accounts is a {type(accounts)}")
 
+    cprint("roulette object created")
     roulette = AmericanRoulette(accounts)
+    stats = GameStats("Roulette", context.account.balance)
+    stats.rounds_played = 0
     while continue_game:
         roulette.reset_round()
         clear_screen()
         display_roulette_topbar(context)
+        stats.rounds_played += 1
+        cprint("within loop, round incremented")
 
         # Input to stop loop from running constantly
         choice = cinput("Press [Enter] to start a new round and [q] to quit: ")
 
         if choice.lower() in {"q", "quit"}:
             continue_game = False
+            stats.ending_balance = context.account.balance
+            display_stats(stats)
             break
 
         status = roulette.submit_bets(context)
         if status == "BANKRUPT":
+            stats.ending_balance = context.account.balance
+            display_stats(stats)
             break
 
         roulette.spin_wheel(context)
-        roulette.payout()
+        roulette.payout(stats)
         refresh_roulette_topbar(context)
 
         play_again = None
@@ -510,7 +525,9 @@ def play_roulette(context: GameContext) -> None:
                 cprint("Please enter 'Yes' or 'No'.")
                 continue
             if play_again.lower() in {"n", "no"}:
-                #cprint("Quitting roulette...")
+                stats.ending_balance = context.account.balance
+                print("before display stats")
+                display_stats(stats)
                 continue_game = False
                 break
             elif play_again == "" or play_again.lower() in {"y", "yes"}:
