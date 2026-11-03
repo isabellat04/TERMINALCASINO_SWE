@@ -1,31 +1,23 @@
-import random
-from typing import List, Optional
-from time import sleep
-import time
 import sys
 import shutil
 import re
-
-from casino.types import GameContext
-from casino.utils import clear_screen, cprint, cinput, display_topbar
+import time
+import random
+from time import sleep
+from typing import Optional, List
 from casino.accounts import Account
-from casino.stats import GameStats, display_stats
 
-ROULETTE_HEADER = """
-┌─────────────────────────────┐
-│     ♠ R O U L E T T E ♠     │
-└─────────────────────────────┘
-"""
 
-HEADER_OPTIONS = {
-    "header": ROULETTE_HEADER,
-    "margin": 1,
-}
+from casino.utils import display_topbar, clear_screen, cprint, cinput
+from casino.types import GameContext
+from ..standard_constants import *
 
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
+
 def _visible_len(s: str) -> int:
     return len(ANSI_RE.sub("", s))
+
 
 def cprint_ansi_center(line: str, end: str = "\n") -> None:
     """Center a string that may contain ANSI escape codes."""
@@ -34,16 +26,18 @@ def cprint_ansi_center(line: str, end: str = "\n") -> None:
     pad_left = max(0, (width - vis) // 2)
     print((" " * pad_left) + line, end=end)
 
+
 def cprint_table_center(block: str) -> None:
     lines = block.strip("\n").splitlines()
     term_width = shutil.get_terminal_size().columns
-    
+
     max_len = max(_visible_len(line) for line in lines)
     pad_left = max(0, (term_width - max_len) // 2)
-    
+
     for line in lines:
         padded_line = " " * pad_left + line
         print(padded_line)
+
 
 def display_roulette_topbar(ctx: GameContext) -> None:
     display_topbar(ctx.account, **HEADER_OPTIONS)
@@ -72,63 +66,6 @@ def refresh_roulette_topbar(ctx: GameContext) -> None:
     sys.stdout.flush()
 
 
-STANDARD_AMERICAN_ROULETTE_WHEEL = [
-    ("0", "green", 0, 13),
-    ("28", "black", 0, 16),
-    ("9", "red", 0, 19),
-    ("26", "black", 1, 24),
-    ("30", "red", 2, 26),
-    ("11", "black", 3, 27),
-    ("7", "red", 4, 29),
-    ("20", "black", 5, 29),
-    ("32", "red", 6, 30),
-    ("17", "black", 7, 30),
-    ("5", "red", 8, 30),
-    ("22", "black", 9, 30),
-    ("34", "red", 10, 30),
-    ("15", "black", 11, 29),
-    ("3", "red", 12, 29),
-    ("24", "black", 13, 27),
-    ("36", "red", 14, 26),
-    ("13", "black", 15, 24),
-    ("1", "red", 16, 19),
-    ("00", "green", 16, 16),
-    ("27", "red", 16, 13),
-    ("10", "black", 16, 10),
-    ("25", "red", 15, 7),
-    ("29", "black", 14, 6),
-    ("12", "red", 13, 4),
-    ("8", "black", 12, 3),
-    ("19", "red", 11, 3),
-    ("31", "black", 10, 2),
-    ("18", "red", 9, 2),
-    ("6", "black", 8, 2),
-    ("21", "red", 7, 2),
-    ("33", "black", 6, 2),
-    ("16", "red", 5, 3),
-    ("4", "black", 4, 3),
-    ("23", "red", 3, 5),
-    ("35", "black", 2, 6),
-    ("14", "red", 1, 8),
-    ("2", "black", 0, 10)
-]
-
-ROULETTE_TABLE = """
-┌────────────────────────────────────────────────────────────────┐
-│    │  3 │  6 │  9 │ 12 │ 15 │ 18 │ 21 │ 24 │ 27 │ 30 │ 33 │ 36 │
-│ 00 │────│────│────│────│────│────│────│────│────│────│────│────│
-│────│  2 │  5 │  8 │ 11 │ 14 │ 17 │ 20 │ 23 │ 26 │ 29 │ 32 │ 35 │
-│  0 │────│────│────│────│────│────│────│────│────│────│────│────│
-│    │  1 │  4 │  7 │ 10 │ 13 │ 16 │ 19 │ 22 │ 25 │ 28 │ 31 │ 34 │
-└────────────────────────────────────────────────────────────────┘
-"""
-
-TOTAL_ROTATIONS = 2
-SEC_BTWN_SPIN = 0.04
-
-ROWS, COLS= 17, 33
-ROULETTE_GRID = [['  ' for _ in range(COLS)] for _ in range(ROWS)]
-
 class Roulette:
     """
     Abstract base class to play roulette.
@@ -154,7 +91,7 @@ class Roulette:
                 "uuid_2": {"type": "number", "value": "00", "amount": 50}
             }
     """
-    
+
     def __init__(self, accounts: List[Account]) -> None:
         """
         Initializes roulette
@@ -203,15 +140,15 @@ class Roulette:
             "color", "number"
         """
         type_map = {
-            "c" : "color",
-            "color" : "color",
-            "n" : "number",
-            "number" : "number"
+            "c": "color",
+            "color": "color",
+            "n": "number",
+            "number": "number"
         }
         return type_map.get(input_value.lower(), input_value)
 
     @staticmethod
-    def roulette_sort_key(value : str) -> int:
+    def roulette_sort_key(value: str) -> int:
         """
         Sorts values in roulette. Used as a key in the `sorted()` function.
         """
@@ -221,11 +158,11 @@ class Roulette:
             return 0
         return int(value)
 
-    def print_wheel(self, highlighted_num = None) -> None:
+    def print_wheel(self, highlighted_num=None) -> None:
         # clear current grid
         for row in range(len(ROULETTE_GRID)):
             for col in range(len(ROULETTE_GRID[0])):
-                ROULETTE_GRID[row][col] = ' ' # each empty spot is 2 spaces
+                ROULETTE_GRID[row][col] = ' '  # each empty spot is 2 spaces
 
         for (num_str, color, row, col) in STANDARD_AMERICAN_ROULETTE_WHEEL:
             # col += 29
@@ -233,8 +170,8 @@ class Roulette:
                 num_str = " " + num_str
             if num_str.strip() == highlighted_num.strip():
                 # the spot in the column before and column after the number become *'s
-                ROULETTE_GRID[row][col-1] = "*"
-                ROULETTE_GRID[row][col+1] = "*"
+                ROULETTE_GRID[row][col - 1] = "*"
+                ROULETTE_GRID[row][col + 1] = "*"
 
             if color == "green":
                 ROULETTE_GRID[row][col] = f"\x1b[42m\x1b[97m{num_str}\x1b[0m"
@@ -251,7 +188,7 @@ class Roulette:
         for num in sequence:
             clear_screen()
             display_roulette_topbar(ctx)
-            self.print_wheel(highlighted_num = num)
+            self.print_wheel(highlighted_num=num)
             time.sleep(sec_btwn_spins)
 
     def spin_wheel(self, ctx: GameContext) -> tuple[str, str, int, int]:
@@ -264,7 +201,7 @@ class Roulette:
                 - str: The winning color (either "red", "green", or "black")
         """
 
-        #cprint("Spinning wheel...")
+        # cprint("Spinning wheel...")
 
         random_index = random.randint(0, len(self.wheel) - 1)
         self.winning_value = self.wheel[random_index]
@@ -276,7 +213,7 @@ class Roulette:
         self.wheel_animation(ctx, sequence)
 
         winning_number = self.winning_value[0]
-        winning_color  = self.winning_value[1]
+        winning_color = self.winning_value[1]
 
         cprint(f"Winning number: {winning_number}")
         cprint(f"Winning color: {winning_color}")
@@ -304,18 +241,18 @@ class Roulette:
             player_balances = 0
             for account in self.accounts:
                 player_balances += account.balance
-            
+
             if player_balances == 0:
                 cprint("ERROR: All players have gone bankrupt. "
-                      "You cannot play any more roulette.")
+                       "You cannot play any more roulette.")
                 sleep(3)
                 return "BANKRUPT"
 
             if (self.accounts[i].balance == 0):
-                cprint(f"Skipping player {i+1} because of empty balance...")
+                cprint(f"Skipping player {i + 1} because of empty balance...")
                 continue
 
-            will_bet = cinput(f"🤵: Would you like to bet, Player {i+1} (y/N): ")
+            will_bet = cinput(f"🤵: Would you like to bet, Player {i + 1} (y/N): ")
 
             if will_bet == "" or will_bet.lower() in {"n", "no"}:
                 cprint("User skipped betting. Moving to next user...", end="\n\n")
@@ -330,7 +267,7 @@ class Roulette:
             clear_screen()
             display_roulette_topbar(ctx)
             # Input bet amount
-            bet_amount = cinput(f"Player {i+1}'s Bet: ")
+            bet_amount = cinput(f"Player {i + 1}'s Bet: ")
 
             # Check bet_amount is a positive integer
             try:
@@ -340,7 +277,7 @@ class Roulette:
                     raise ValueError
             except ValueError:
                 cprint(f"ERROR: '{bet_amount}' is not a valid number. "
-                      "Please enter a positive integer.", end="\n\n")
+                       "Please enter a positive integer.", end="\n\n")
                 continue
 
             # Check that account has enough money to bet
@@ -354,9 +291,9 @@ class Roulette:
 
             clear_screen()
             display_roulette_topbar(ctx)
-            cprint(f"Successfully withdrew {bet_amount} coins from Player {i+1}.")
-            cprint(f"Player {i+1} remaining balance: "
-                  f"{self.accounts[i].balance} coins.")
+            cprint(f"Successfully withdrew {bet_amount} coins from Player {i + 1}.")
+            cprint(f"Player {i + 1} remaining balance: "
+                   f"{self.accounts[i].balance} coins.")
 
             # Ask for desired bet type
             bet_type = ""
@@ -391,7 +328,7 @@ class Roulette:
                         break
                     else:
                         cprint("Error: Chosen color is not red, green, or black.")
-            
+
             # Number betting
             elif bet_type.lower() in {"n", "number"}:
                 while True:
@@ -402,18 +339,18 @@ class Roulette:
                         break
                     else:
                         cprint("Error: You may only enter one of the following "
-                              "numbers.")
+                               "numbers.")
                         sorted_numbers = sorted(self.valid_numbers,
                                                 key=self.roulette_sort_key)
                         valid_numbers_str = ", ".join(sorted_numbers)
                         cprint("\t" + valid_numbers_str)
-         
+
             # Once values are successfully chosen, save to dictionary
             account_id = str(self.accounts[i].aid)
             self.bets[account_id] = {
-                "type"   : Roulette.normalize_type(bet_type.lower()),
-                "value"  : Roulette.normalize_color(bet_value.lower()),
-                "amount" : bet_amount
+                "type": Roulette.normalize_type(bet_type.lower()),
+                "value": Roulette.normalize_color(bet_value.lower()),
+                "amount": bet_amount
             }
             i += 1  # Move to next user
 
@@ -423,13 +360,13 @@ class Roulette:
         """
         assert self.winning_value is not None
         winning_number = self.winning_value[0]
-        winning_color  = self.winning_value[1]
+        winning_color = self.winning_value[1]
 
         cprint("Paying out all winners...")
         i = 0
         for _, bet in self.bets.items():
-            bet_type   = bet["type"]
-            bet_value  = bet["value"]
+            bet_type = bet["type"]
+            bet_value = bet["value"]
             bet_amount = bet["amount"]
 
             win_multiplier = 1
@@ -447,92 +384,12 @@ class Roulette:
             if win_multiplier > 1:
                 win_amount = bet_amount * win_multiplier
                 self.accounts[i].deposit(win_amount)
-                stats.wins +=1
-                cprint(f"Player {i+1}: Won {win_amount} coins.")
+                stats.wins += 1
+                cprint(f"Player {i + 1}: Won {win_amount} coins.")
             else:
                 stats.losses += 1
-                cprint(f"Player {i+1}: Lost {bet_amount} coins.")
-            
+                cprint(f"Player {i + 1}: Lost {bet_amount} coins.")
+
             i += 1
 
         cprint("Finished payout.")
-
-
-class AmericanRoulette(Roulette):
-    """Plays roulette using American rules."""
-
-    def __init__(self, accounts: List[Account]):
-        super().__init__(accounts)
-        self.wheel = STANDARD_AMERICAN_ROULETTE_WHEEL
-        self.valid_numbers = [number for (number, _, _, _) in self.wheel]
-        # self.stats = GameStats("Roulette",self.account.balance)
-
-        # cprint("account balance: " + co.accounts.balance)
-
-
-def play_roulette(context: GameContext) -> None:
-    continue_game = True
-
-    # Temporary fix
-    # TODO: fix argument in play_roulette to only except `List[GameContext]`
-    # and not `GameContext`
-    contexts = [context]
-
-    # Access account data
-    accounts = [account.account for account in contexts]
-
-    if not isinstance(accounts, list):
-        raise ValueError("accounts is not a list. "
-                         f"accounts is a {type(accounts)}")
-
-    cprint("roulette object created")
-    roulette = AmericanRoulette(accounts)
-    stats = GameStats("Roulette", context.account.balance)
-    stats.rounds_played = 0
-    while continue_game:
-        roulette.reset_round()
-        clear_screen()
-        display_roulette_topbar(context)
-        stats.rounds_played += 1
-        cprint("within loop, round incremented")
-
-        # Input to stop loop from running constantly
-        choice = cinput("Press [Enter] to start a new round and [q] to quit: ")
-
-        if choice.lower() in {"q", "quit"}:
-            continue_game = False
-            stats.ending_balance = context.account.balance
-            display_stats(stats)
-            break
-
-        status = roulette.submit_bets(context)
-        if status == "BANKRUPT":
-            stats.ending_balance = context.account.balance
-            display_stats(stats)
-            break
-
-        roulette.spin_wheel(context)
-        roulette.payout(stats)
-        refresh_roulette_topbar(context)
-
-        play_again = None
-
-        while True:
-            valid_choices = ["N", "NO", "Y", "YES", ""]
-            play_again = cinput("🤵: Would you like to play another round (Y/n): ")
-
-            if play_again.upper() not in valid_choices:
-                cprint("Please enter 'Yes' or 'No'.")
-                continue
-            if play_again.lower() in {"n", "no"}:
-                stats.ending_balance = context.account.balance
-                print("before display stats")
-                display_stats(stats)
-                continue_game = False
-                break
-            elif play_again == "" or play_again.lower() in {"y", "yes"}:
-                continue_game = True
-                break
-
-    #cprint("Exiting roulette...")
-    #sleep(0.5)
