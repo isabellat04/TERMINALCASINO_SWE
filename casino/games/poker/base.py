@@ -2,7 +2,7 @@ from collections import Counter
 from itertools import combinations
 from casino.utils import cinput
 
-from .variants.poker import PokerGame
+from .variants.poker import Poker
 from .views.view import *
 # from .constants import *
 from ...cards import StandardCard
@@ -14,4 +14,4 @@ from ...cards import StandardCard
 
 def play_poker(ctx: GameContext) -> None:
     """Play a poker game."""
-    PokerGame(ctx).play()
+    Poker(ctx).play()

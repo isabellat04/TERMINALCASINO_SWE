@@ -9,14 +9,14 @@ from casino.utils import cinput, clear_screen, cprint
 
 # from ..base import hand_score, hand_name, get_and_validate_raise_amount
 from ..constants import *
-from ..views.view import display_poker_topbar, print_hand
+from ..views.view import PokerView
 
 
 # ---------------------------------------------------------------------------
-# PokerGame class
+# Poker class
 # ---------------------------------------------------------------------------
 
-class PokerGame:
+class Poker:
     """Encapsulates a single session of Texas Hold'em Poker."""
 
     MIN_BALANCE = 20   # minimum chips required to start a round
@@ -39,7 +39,7 @@ class PokerGame:
         """Run the full poker session (multiple rounds) until the player leaves."""
         if self.account.balance < self.MIN_BALANCE:
             clear_screen()
-            display_poker_topbar(self.ctx)
+            PokerView.display_poker_topbar(self.ctx)
             cprint(NO_FUNDS_MSG)
             cinput("Press enter to continue.")
             return
@@ -66,7 +66,7 @@ class PokerGame:
                     display_stats(self.stats)
                     return
                 clear_screen()
-                display_poker_topbar(self.ctx)
+                PokerView.display_poker_topbar(self.ctx)
                 cprint(INVALID_YES_OR_NO_MSG)
                 play_again = cinput(YES_OR_NO_PROMPT)
 
@@ -82,7 +82,7 @@ class PokerGame:
     def _play_round(self) -> None:
         """Play a single round of poker."""
         clear_screen()
-        display_poker_topbar(self.ctx)
+        PokerView.display_poker_topbar(self.ctx)
 
         deck = self.FULL_DECK
         player_hand: list[StandardCard] = []
@@ -259,7 +259,7 @@ class PokerGame:
         """Resolve the round and update balances/stats."""
         if player_folded:
             clear_screen()
-            display_poker_topbar(self.ctx)
+            PokerView.display_poker_topbar(self.ctx)
             cprint("You folded. Opponent wins the pot.")
             opponent_chips += pot
             self.stats.losses += 1
@@ -301,19 +301,19 @@ class PokerGame:
         message: str = "",
     ) -> None:
         clear_screen()
-        display_poker_topbar(self.ctx)
+        PokerView.display_poker_topbar(self.ctx)
         if message:
             cprint(message + "\n")
         cprint(f"=== {stage.upper()} ===\n")
         cprint("Opponent hand:")
-        print_hand(opponent_hand, hidden=(stage != "SHOWDOWN"))
+        PokerView.print_hand(opponent_hand, hidden=(stage != "SHOWDOWN"))
         cprint("Board:")
         if not board:
             cprint("No cards on the board yet.")
         else:
-            print_hand(board)
+            PokerView.print_hand(board)
         cprint("Your hand:")
-        print_hand(player_hand)
+        PokerView.print_hand(player_hand)
         cprint(f"Your current hand type: {hand_name(hand_score(player_hand, board))}")
         cprint(f"Pot: {pot} chips")
         cprint(f"Your balance: {self.account.balance} chips\n")
